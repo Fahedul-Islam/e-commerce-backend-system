@@ -1,0 +1,34 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build cache
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+
+# Dependency directories
+vendor/
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.iml
+
+# Environment variables
+.env
+
+# Database files (if any local dev DB like sqlite)
+*.db
+
+# Docker stuff
+*.pid
+*.seed
+docker-compose.override.yml
