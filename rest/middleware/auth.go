@@ -38,7 +38,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return []byte(jwtSecret), nil
 
 		})
-		log.Printf("Parsed token: %+v, error: %v", token, err)
 		if err != nil || !token.Valid {
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return

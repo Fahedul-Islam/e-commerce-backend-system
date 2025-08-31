@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"log"
 )
 
 type ProductRepository struct {
@@ -20,7 +19,7 @@ func (r *ProductRepository) InitTable() error {
 		price DECIMAL(10,2) NOT NULL,
 		image_url VARCHAR(255) NOT NULL
 	)`
-	log.Printf("Executing query: %s", query)
+
 	_, err := r.DB.Exec(query)
 	return err
 }
@@ -53,4 +52,16 @@ func (r *ProductRepository) GetByID(id int) (Product, error) {
 	query := `SELECT * FROM products WHERE id = $1`
 	err := r.DB.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Price, &p.ImageUrl)
 	return p, err
+}
+
+func (r *ProductRepository) Delete(id string) error {
+	query := `DELETE FROM products WHERE id = $1`
+	_, err := r.DB.Exec(query, id)
+	return err
+}
+
+func (r *ProductRepository) Update(pId int, product *Product) error {
+	query := `UPDATE products SET name = $1, price = $2, image_url = $3 WHERE id = $4`
+	_, err := r.DB.Exec(query, product.Name, product.Price, product.ImageUrl, pId)
+	return err
 }

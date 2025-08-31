@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/Fahedul-Islam/e-commerce/util"
@@ -27,7 +26,7 @@ func (r *AuthHandler) InitTable() error {
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`
-	log.Printf("Executing query: %s", query)
+
 	_, err := r.DB.Exec(query)
 	return err
 }

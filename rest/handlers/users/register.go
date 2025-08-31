@@ -32,8 +32,6 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	existingUser.CreatedAt = time.Now()
 	existingUser.UpdatedAt = time.Now()
 
-	log.Printf("Creating user: %+v", existingUser)
-
 	if err := h.Repo.Create(&existingUser); err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
