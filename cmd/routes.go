@@ -6,8 +6,9 @@ import (
 
 	"github.com/Fahedul-Islam/e-commerce/config"
 	"github.com/Fahedul-Islam/e-commerce/database"
-	"github.com/Fahedul-Islam/e-commerce/handlers"
-	"github.com/Fahedul-Islam/e-commerce/middleware"
+	"github.com/Fahedul-Islam/e-commerce/rest/handlers/users"
+	"github.com/Fahedul-Islam/e-commerce/rest/handlers/products"
+	"github.com/Fahedul-Islam/e-commerce/rest/middleware"
 )
 
 func initRoutes(mux *http.ServeMux, middlewareManager *middleware.MiddlewareManager) {
@@ -17,12 +18,12 @@ func initRoutes(mux *http.ServeMux, middlewareManager *middleware.MiddlewareMana
 	if err != nil {
 		panic(err)
 	}
-	productHandler := handlers.NewProductHandler(database.NewProductRepository(db))
+	productHandler := products.NewProductHandler(database.NewProductRepository(db))
 	if err := productHandler.CreateTable(); err != nil {
 		log.Fatalf("Error creating product table: %v", err)
 	}
 
-	userHandler := handlers.NewUserHandler(database.NewAuthHandler(db, cfg.JWT.Secret))
+	userHandler := users.NewUserHandler(database.NewAuthHandler(db, cfg.JWT.Secret))
 	if err := userHandler.CreateTable(); err != nil {
 		log.Fatalf("Error creating user table: %v", err)
 	}
