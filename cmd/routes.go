@@ -28,11 +28,11 @@ func initRoutes(mux *http.ServeMux, middlewareManager *middleware.MiddlewareMana
 		log.Fatalf("Error creating user table: %v", err)
 	}
 
-	mux.Handle("GET /products", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.GetProducts)))
+	mux.Handle("GET /products", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.GetAllProducts)))
 	mux.Handle("GET /products/{id}", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.GetProductByID)))
 	mux.Handle("POST /products/create", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.CreateProduct)))
 	mux.Handle("GET /users", middlewareManager.With()(http.HandlerFunc(userHandler.GetUsers)))
-	mux.Handle("POST /register", middlewareManager.With()(http.HandlerFunc(userHandler.CreateUser)))
+	mux.Handle("POST /register", middlewareManager.With()(http.HandlerFunc(userHandler.Register)))
 	mux.Handle("POST /login", middlewareManager.With()(http.HandlerFunc(userHandler.Login)))
 
 }
