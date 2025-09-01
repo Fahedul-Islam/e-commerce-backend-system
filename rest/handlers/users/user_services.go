@@ -25,9 +25,6 @@ func NewUserHandler(repo *database.AuthHandler) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 
-func (h *UserHandler) CreateTable() error {
-	return h.Repo.InitTable()
-}
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.GetAll()

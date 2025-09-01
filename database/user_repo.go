@@ -17,20 +17,6 @@ func NewAuthHandler(db *sql.DB, jwtSecret []byte) *AuthHandler {
 	return &AuthHandler{DB: db, JwtSecret: jwtSecret, TokenExpiry: 24 * time.Hour}
 }
 
-func (r *AuthHandler) InitTable() error {
-	query := `CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		username VARCHAR(100) NOT NULL,
-		email VARCHAR(100) NOT NULL,
-		password_hash VARCHAR(255) NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`
-
-	_, err := r.DB.Exec(query)
-	return err
-}
-
 func (r *AuthHandler) Create(user *User) error {
 	query := `INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id`
 	return r.DB.QueryRow(query, user.Username, user.Email, user.PasswordHash).Scan(&user.ID)

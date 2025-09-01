@@ -80,3 +80,15 @@ func (c *Config) GetDBConStr() string {
         c.Database.SSLMode,
     )
 }
+
+func (c *Config) GetDBURL() string {
+    return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+        c.Database.User,
+        c.Database.Password,
+        c.Database.Host,
+        c.Database.Port,
+        c.Database.DBName,
+        c.Database.SSLMode,
+    )
+}
+

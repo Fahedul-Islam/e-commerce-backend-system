@@ -12,17 +12,6 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{DB: db}
 }
 
-func (r *ProductRepository) InitTable() error {
-	query := `CREATE TABLE IF NOT EXISTS products (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(100) NOT NULL,
-		price DECIMAL(10,2) NOT NULL,
-		image_url VARCHAR(255) NOT NULL
-	)`
-
-	_, err := r.DB.Exec(query)
-	return err
-}
 
 func (r *ProductRepository) Create(product *Product) error {
 	query := `INSERT INTO products (name, price, image_url) VALUES ($1, $2, $3) RETURNING id`

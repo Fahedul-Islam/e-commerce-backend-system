@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/Fahedul-Islam/e-commerce/config"
 	"github.com/Fahedul-Islam/e-commerce/database"
-	"github.com/Fahedul-Islam/e-commerce/rest/handlers/users"
 	"github.com/Fahedul-Islam/e-commerce/rest/handlers/products"
+	"github.com/Fahedul-Islam/e-commerce/rest/handlers/users"
 	"github.com/Fahedul-Islam/e-commerce/rest/middleware"
 )
 
@@ -18,15 +17,11 @@ func initRoutes(mux *http.ServeMux, middlewareManager *middleware.MiddlewareMana
 	if err != nil {
 		panic(err)
 	}
+	database.Migrate(cfg.GetDBURL())
+	
 	productHandler := products.NewProductHandler(database.NewProductRepository(db))
-	if err := productHandler.CreateTable(); err != nil {
-		log.Fatalf("Error creating product table: %v", err)
-	}
-
 	userHandler := users.NewUserHandler(database.NewAuthHandler(db, cfg.JWT.Secret))
-	if err := userHandler.CreateTable(); err != nil {
-		log.Fatalf("Error creating user table: %v", err)
-	}
+	
 
 	mux.Handle("GET /products", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.GetAllProducts)))
 	mux.Handle("GET /products/{id}", middlewareManager.With(middleware.AuthMiddleware)(http.HandlerFunc(productHandler.GetProductByID)))

@@ -11,7 +11,3 @@ type ProductHandler struct {
 func NewProductHandler(repo *database.ProductRepository) *ProductHandler {
 	return &ProductHandler{Repo: repo}
 }
-
-func (h *ProductHandler) CreateTable() error {
-	return h.Repo.InitTable()
-}
