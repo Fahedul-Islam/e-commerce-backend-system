@@ -18,8 +18,8 @@ func NewAuthHandler(db *sql.DB, jwtSecret []byte) *AuthHandler {
 }
 
 func (r *AuthHandler) Create(user *User) error {
-	query := `INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id`
-	return r.DB.QueryRow(query, user.Username, user.Email, user.PasswordHash).Scan(&user.ID)
+	query := `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $2, $3, $4) RETURNING id`
+	return r.DB.QueryRow(query, user.Username, user.Email, user.PasswordHash, user.Roles).Scan(&user.ID)
 }
 
 func (r *AuthHandler) GetAll() ([]User, error) {
@@ -32,7 +32,7 @@ func (r *AuthHandler) GetAll() ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt, &u.Roles); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -43,9 +43,10 @@ func (r *AuthHandler) GetAll() ([]User, error) {
 func (r *AuthHandler) Authenticate(email, password string) (*User, error) {
 	var user User
 	query := `SELECT * FROM users WHERE email = $1`
-	if err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt); err != nil {
+	if err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Roles); err != nil {
 		return nil, err
 	}
+
 	if err := util.CheckPasswordHash(password, user.PasswordHash); err != nil {
 		return nil, err
 	}

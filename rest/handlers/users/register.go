@@ -31,6 +31,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	existingUser.PasswordHash, _ = util.HashPassword(newUser.Password)
 	existingUser.CreatedAt = time.Now()
 	existingUser.UpdatedAt = time.Now()
+	existingUser.Roles = newUser.Roles
 
 	if err := h.Repo.Create(&existingUser); err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)

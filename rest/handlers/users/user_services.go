@@ -19,12 +19,12 @@ type contextKey string
 const (
 	ContextUserID contextKey = "user_id"
 	ContextEmail  contextKey = "email"
+	ContextRoles  contextKey = "roles"
 )
 
 func NewUserHandler(repo *database.AuthHandler) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
-
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repo.GetAll()
@@ -46,6 +46,7 @@ func (h *UserHandler) generateToken(user *database.User) (string, error) {
 		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   user.Email,
+		"roles":   user.Roles,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -56,6 +57,7 @@ func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	userId := ctx.Value(ContextUserID)
 	email := ctx.Value(ContextEmail)
+	roles := ctx.Value(ContextRoles)
 
 	if userId == nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -67,6 +69,7 @@ func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Reques
 		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   email.(string),
+		"roles":   roles.(string),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
