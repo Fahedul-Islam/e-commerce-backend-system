@@ -36,6 +36,7 @@ func initRoutes(mux *http.ServeMux, middlewareManager *middleware.MiddlewareMana
 
 	mux.Handle("GET /users", middlewareManager.With()(http.HandlerFunc(userHandler.GetUsers)))
 	mux.Handle("POST /register", middlewareManager.With()(http.HandlerFunc(userHandler.Register)))
+	mux.Handle("POST /register/verify-otp", middlewareManager.With()(http.HandlerFunc(userHandler.VerifyOTP)))
 	mux.Handle("POST /login", middlewareManager.With()(http.HandlerFunc(userHandler.Login)))
 	mux.Handle("POST /refresh-token", middlewareManager.With()(http.HandlerFunc(userHandler.RefreshHandler)))
 
