@@ -23,10 +23,10 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to login", http.StatusUnauthorized)
 		return
 	}
-	tokenString, err := h.generateToken(user)
+	accessTokenString, refreshTokenString, err := h.generateToken(user)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
-	util.SendData(w, map[string]string{"token": tokenString, "expires_in": h.Repo.TokenExpiry.String(), "token_type": "bearer"}, http.StatusOK)
+	util.SendData(w, map[string]string{"access_token": accessTokenString, "refresh_token": refreshTokenString, "expires_in": h.Repo.TokenExpiry.String(), "token_type": "bearer"}, http.StatusOK)
 }

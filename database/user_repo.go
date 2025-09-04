@@ -11,10 +11,11 @@ type AuthHandler struct {
 	DB          *sql.DB
 	JwtSecret   []byte
 	TokenExpiry time.Duration
+	RefreshExpiry time.Duration
 }
 
 func NewAuthHandler(db *sql.DB, jwtSecret []byte) *AuthHandler {
-	return &AuthHandler{DB: db, JwtSecret: jwtSecret, TokenExpiry: 24 * time.Hour}
+	return &AuthHandler{DB: db, JwtSecret: jwtSecret, TokenExpiry: 24 * time.Hour, RefreshExpiry: 7 * 24 * time.Hour}
 }
 
 func (r *AuthHandler) Create(user *User) error {

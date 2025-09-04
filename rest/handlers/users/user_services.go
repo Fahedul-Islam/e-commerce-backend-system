@@ -1,7 +1,9 @@
 package users
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -39,9 +41,9 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	util.SendData(w, users, http.StatusOK)
 }
 
-func (h *UserHandler) generateToken(user *database.User) (string, error) {
+func (h *UserHandler) generateToken(user *database.User) (string, string, error) {
 	now := time.Now()
-	claims := jwt.MapClaims{
+	accessClaims := jwt.MapClaims{
 		"user_id": user.ID,
 		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
 		"iat":     now.Unix(),
@@ -49,29 +51,65 @@ func (h *UserHandler) generateToken(user *database.User) (string, error) {
 		"roles":   user.Roles,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(h.Repo.JwtSecret)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessTokenString, err := accessToken.SignedString(h.Repo.JwtSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken := jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     now.Add(h.Repo.RefreshExpiry).Unix(),
+		"iat":     now.Unix(),
+		"email":   user.Email,
+		"roles":   user.Roles,
+	}
+
+	refreshJwt := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshToken)
+	refreshTokenString, err := refreshJwt.SignedString(h.Repo.JwtSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	key := fmt.Sprintf("refresh_token_%d", user.ID)
+	if err := database.SetRedisClient(key, refreshTokenString, h.Repo.RefreshExpiry); err != nil {
+		return "", "", err
+	}
+
+	return accessTokenString, refreshTokenString, nil
 }
 
-func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Request) (string, error) {
-	ctx := r.Context()
-	userId := ctx.Value(ContextUserID)
-	email := ctx.Value(ContextEmail)
-	roles := ctx.Value(ContextRoles)
-
-	if userId == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return "", errors.New("unauthorized")
+func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Request) (string, string, error) {
+	var body struct {
+		RefreshToken string `json:"refresh_token"`
 	}
-	now := time.Now()
-	claims := jwt.MapClaims{
-		"user_id": userId,
-		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
-		"iat":     now.Unix(),
-		"email":   email.(string),
-		"roles":   roles.(string),
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return "", "", errors.New("invalid request body")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(h.Repo.JwtSecret)
+	claim := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(body.RefreshToken, claim, func(token *jwt.Token) (interface{}, error) {
+		return h.Repo.JwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return "", "", errors.New("invalid refresh token")
+	}
+
+	userID := claim["user_id"].(float64)
+	key := fmt.Sprintf("refresh_token_%d", int(userID))
+	storedToken, err := database.GetRedisClient(key)
+	if err != nil || storedToken != body.RefreshToken {
+		return "", "", errors.New("refresh token not recognized")
+	}
+	user := &database.User{
+		ID:    int(userID),
+		Email: claim["email"].(string),
+		Roles: claim["roles"].(string),
+	}
+	newAccessToken, newRefreshToken, err := h.generateToken(user)
+	if err != nil {
+		return "", "", errors.New("failed to generate new tokens")
+	}
+
+	return newAccessToken, newRefreshToken, nil
 }

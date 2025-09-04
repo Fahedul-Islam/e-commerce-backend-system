@@ -7,10 +7,10 @@ import (
 )
 
 func (h *UserHandler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
-	newToken, err := h.GenerateRefreshToken(w, r)
+	newToken, newRefreshToken, err := h.GenerateRefreshToken(w, r)
 	if err != nil {
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
 	}
-	util.SendData(w, map[string]string{"refresh_token": newToken}, http.StatusOK)
+	util.SendData(w, map[string]string{"refresh_token": newToken, "access_token": newRefreshToken}, http.StatusOK)
 }
