@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/connections"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
@@ -21,7 +22,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve user data from Redis
-	tempUser, err := database.GetTempUser(payload.Email)
+	tempUser, err := connections.GetTempUser(payload.Email)
 	if err != nil {
 		http.Error(w, "OTP expired or invalid", http.StatusUnauthorized)
 		return
@@ -34,7 +35,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into DB
-	user := database.User{
+	user := repository.User{
 		Username:     tempUser["username"],
 		Email:        tempUser["email"],
 		PasswordHash: tempUser["password"],
@@ -48,7 +49,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Remove Redis entry after successful verification
-	_ = database.DeleteTempUser(payload.Email)
+	_ = connections.DeleteTempUser(payload.Email)
 
 	util.SendData(w, user, http.StatusCreated)
 }

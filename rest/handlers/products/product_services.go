@@ -1,13 +1,13 @@
 package products
 
 import (
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 )
 
 type ProductHandler struct {
-	Repo *database.ProductRepository
+	Repo *repository.ProductRepository
 }
 
-func NewProductHandler(repo *database.ProductRepository) *ProductHandler {
+func NewProductHandler(repo *repository.ProductRepository) *ProductHandler {
 	return &ProductHandler{Repo: repo}
 }

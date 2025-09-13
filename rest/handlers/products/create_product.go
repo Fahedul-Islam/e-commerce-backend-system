@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var newProduct database.Product
+	var newProduct repository.Product
 	if err := json.NewDecoder(r.Body).Decode(&newProduct); err != nil {
 		http.Error(w, "Invalid product data", http.StatusBadRequest)
 		return

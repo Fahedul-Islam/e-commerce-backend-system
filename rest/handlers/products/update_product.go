@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
@@ -16,7 +16,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var updatedProduct database.Product
+	var updatedProduct repository.Product
 	if err := json.NewDecoder(r.Body).Decode(&updatedProduct); err != nil {
 		http.Error(w, "Invalid product data", http.StatusBadRequest)
 		return

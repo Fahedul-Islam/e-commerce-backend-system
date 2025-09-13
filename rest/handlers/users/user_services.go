@@ -5,15 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/connections"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 type UserHandler struct {
-	Repo *database.AuthHandler
+	Repo *repository.AuthHandler
 }
 
 type contextKey string
@@ -24,7 +26,7 @@ const (
 	ContextRoles  contextKey = "roles"
 )
 
-func NewUserHandler(repo *database.AuthHandler) *UserHandler {
+func NewUserHandler(repo *repository.AuthHandler) *UserHandler {
 	return &UserHandler{Repo: repo}
 }
 
@@ -41,10 +43,10 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	util.SendData(w, users, http.StatusOK)
 }
 
-func (h *UserHandler) generateToken(user *database.User) (string, string, error) {
+func (h *UserHandler) generateToken(user *repository.User) (string, string, error) {
 	now := time.Now()
 	accessClaims := jwt.MapClaims{
-		"user_id": user.ID,
+		"user_id": strconv.Itoa(int(user.ID)),
 		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   user.Email,
@@ -58,7 +60,7 @@ func (h *UserHandler) generateToken(user *database.User) (string, string, error)
 	}
 
 	refreshToken := jwt.MapClaims{
-		"user_id": user.ID,
+		"user_id": strconv.Itoa(int(user.ID)),
 		"exp":     now.Add(h.Repo.RefreshExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   user.Email,
@@ -72,7 +74,7 @@ func (h *UserHandler) generateToken(user *database.User) (string, string, error)
 	}
 
 	key := fmt.Sprintf("refresh_token_%d", user.ID)
-	if err := database.SetRedisClient(key, refreshTokenString, h.Repo.RefreshExpiry); err != nil {
+	if err := connections.SetRedisClient(key, refreshTokenString, h.Repo.RefreshExpiry); err != nil {
 		return "", "", err
 	}
 
@@ -97,11 +99,11 @@ func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Reques
 
 	userID := claim["user_id"].(float64)
 	key := fmt.Sprintf("refresh_token_%d", int(userID))
-	storedToken, err := database.GetRedisClient(key)
+	storedToken, err := connections.GetRedisClient(key)
 	if err != nil || storedToken != body.RefreshToken {
 		return "", "", errors.New("refresh token not recognized")
 	}
-	user := &database.User{
+	user := &repository.User{
 		ID:    int(userID),
 		Email: claim["email"].(string),
 		Roles: claim["roles"].(string),

@@ -1,4 +1,4 @@
-package database
+package repository
 
 import (
 	"database/sql"
@@ -14,8 +14,8 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 
 
 func (r *ProductRepository) Create(product *Product) error {
-	query := `INSERT INTO products (name, price, image_url) VALUES ($1, $2, $3) RETURNING id`
-	return r.DB.QueryRow(query, product.Name, product.Price, product.ImageUrl).Scan(&product.ID)
+	query := `INSERT INTO products (name, price, image_url, is_available, stock_quantity) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	return r.DB.QueryRow(query, product.Name, product.Price, product.ImageUrl, product.IsAvailable, product.StockQuantity).Scan(&product.ID)
 }
 
 func (r *ProductRepository) GetAll() ([]Product, error) {
@@ -28,7 +28,7 @@ func (r *ProductRepository) GetAll() ([]Product, error) {
 	var products []Product
 	for rows.Next() {
 		var p Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.ImageUrl); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.ImageUrl, &p.IsAvailable, &p.StockQuantity); err != nil {
 			return nil, err
 		}
 		products = append(products, p)
@@ -39,7 +39,7 @@ func (r *ProductRepository) GetAll() ([]Product, error) {
 func (r *ProductRepository) GetByID(id int) (Product, error) {
 	var p Product
 	query := `SELECT * FROM products WHERE id = $1`
-	err := r.DB.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Price, &p.ImageUrl)
+	err := r.DB.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Price, &p.ImageUrl, &p.IsAvailable, &p.StockQuantity)
 	return p, err
 }
 
@@ -50,7 +50,8 @@ func (r *ProductRepository) Delete(id string) error {
 }
 
 func (r *ProductRepository) Update(pId int, product *Product) error {
-	query := `UPDATE products SET name = $1, price = $2, image_url = $3 WHERE id = $4`
-	_, err := r.DB.Exec(query, product.Name, product.Price, product.ImageUrl, pId)
+	query := `UPDATE products SET name = $1, price = $2, image_url = $3, is_available = $4, stock_quantity = $5 WHERE id = $6`
+	_, err := r.DB.Exec(query, product.Name, product.Price, product.ImageUrl, product.IsAvailable, product.StockQuantity, pId)
 	return err
 }
+

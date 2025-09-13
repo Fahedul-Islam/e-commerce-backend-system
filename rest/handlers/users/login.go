@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var loginData database.UserLogin
+	var loginData repository.UserLogin
 	if err := json.NewDecoder(r.Body).Decode(&loginData); err != nil {
 		http.Error(w, "Invalid login data", http.StatusBadRequest)
 		return

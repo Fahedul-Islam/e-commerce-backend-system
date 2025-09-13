@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,13 +57,28 @@ func AuthMiddleware(requiredRole string) func(http.Handler) http.Handler {
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
-
+			userId, err := normalizeUserID(claims["user_id"])
+			if err != nil {
+				http.Error(w, "Invalid user ID", http.StatusBadRequest)
+				return
+			}
 			// Add claims to context
-			ctx := context.WithValue(r.Context(), "user_id", claims["user_id"])
+			ctx := context.WithValue(r.Context(), "user_id", userId)
 			ctx = context.WithValue(ctx, "email", claims["email"])
 			ctx = context.WithValue(ctx, "roles", claims["roles"])
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
+	}
+}
+
+func normalizeUserID(id interface{}) (string, error) {
+	switch v := id.(type) {
+	case string:
+		return v, nil
+	case float64: // numbers from JWT claims are float64
+		return strconv.Itoa(int(v)), nil
+	default:
+		return "", fmt.Errorf("unsupported user_id type: %T", v)
 	}
 }

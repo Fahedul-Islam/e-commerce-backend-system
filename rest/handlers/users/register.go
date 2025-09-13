@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Fahedul-Islam/e-commerce/database"
+	"github.com/Fahedul-Islam/e-commerce/database/connections"
+	"github.com/Fahedul-Islam/e-commerce/database/repository"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var newUser database.UserRegistration
+	var newUser repository.UserRegistration
 	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
 		http.Error(w, "Invalid user data", http.StatusBadRequest)
 		return
@@ -39,7 +40,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		"roles":    newUser.Roles,
 		"otp":      otp,
 	}
-	err := database.SaveTempUser(newUser.Email, tempUser) // save to Redis
+	err := connections.SaveTempUser(newUser.Email, tempUser) // save to Redis
 	if err != nil {
 		http.Error(w, "Failed to save OTP", http.StatusInternalServerError)
 		return
