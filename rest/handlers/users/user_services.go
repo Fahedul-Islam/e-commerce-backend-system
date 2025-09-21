@@ -8,14 +8,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Fahedul-Islam/e-commerce/config"
 	"github.com/Fahedul-Islam/e-commerce/database/connections"
-	"github.com/Fahedul-Islam/e-commerce/database/repository"
+	"github.com/Fahedul-Islam/e-commerce/domain"
 	"github.com/Fahedul-Islam/e-commerce/util"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 type UserHandler struct {
-	Repo *repository.AuthHandler
+	cnf  *config.Config
+	srvc Service
 }
 
 type contextKey string
@@ -26,12 +28,14 @@ const (
 	ContextRoles  contextKey = "roles"
 )
 
-func NewUserHandler(repo *repository.AuthHandler) *UserHandler {
-	return &UserHandler{Repo: repo}
+func NewUserHandler(cnf *config.Config, srvc Service) *UserHandler {
+	return &UserHandler{cnf: cnf,
+		srvc: srvc,
+	}
 }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Repo.GetAll()
+	users, err := h.srvc.GetAllUsers()
 	if err != nil {
 		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
 		return
@@ -43,38 +47,38 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	util.SendData(w, users, http.StatusOK)
 }
 
-func (h *UserHandler) generateToken(user *repository.User) (string, string, error) {
+func (h *UserHandler) generateToken(user *domain.User) (string, string, error) {
 	now := time.Now()
 	accessClaims := jwt.MapClaims{
 		"user_id": strconv.Itoa(int(user.ID)),
-		"exp":     now.Add(h.Repo.TokenExpiry).Unix(),
+		"exp":     now.Add(h.cnf.JWT.TokenExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   user.Email,
 		"roles":   user.Roles,
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessTokenString, err := accessToken.SignedString(h.Repo.JwtSecret)
+	accessTokenString, err := accessToken.SignedString(h.cnf.JWT.Secret)
 	if err != nil {
 		return "", "", err
 	}
 
 	refreshToken := jwt.MapClaims{
 		"user_id": strconv.Itoa(int(user.ID)),
-		"exp":     now.Add(h.Repo.RefreshExpiry).Unix(),
+		"exp":     now.Add(h.cnf.JWT.RefreshExpiry).Unix(),
 		"iat":     now.Unix(),
 		"email":   user.Email,
 		"roles":   user.Roles,
 	}
 
 	refreshJwt := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshToken)
-	refreshTokenString, err := refreshJwt.SignedString(h.Repo.JwtSecret)
+	refreshTokenString, err := refreshJwt.SignedString(h.cnf.JWT.Secret)
 	if err != nil {
 		return "", "", err
 	}
 
 	key := fmt.Sprintf("refresh_token_%d", user.ID)
-	if err := connections.SetRedisClient(key, refreshTokenString, h.Repo.RefreshExpiry); err != nil {
+	if err := connections.SetRedisClient(key, refreshTokenString, h.cnf.JWT.RefreshExpiry); err != nil {
 		return "", "", err
 	}
 
@@ -91,7 +95,7 @@ func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Reques
 
 	claim := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(body.RefreshToken, claim, func(token *jwt.Token) (interface{}, error) {
-		return h.Repo.JwtSecret, nil
+		return h.cnf.JWT.Secret, nil
 	})
 	if err != nil || !token.Valid {
 		return "", "", errors.New("invalid refresh token")
@@ -103,7 +107,7 @@ func (h *UserHandler) GenerateRefreshToken(w http.ResponseWriter, r *http.Reques
 	if err != nil || storedToken != body.RefreshToken {
 		return "", "", errors.New("refresh token not recognized")
 	}
-	user := &repository.User{
+	user := &domain.User{
 		ID:    int(userID),
 		Email: claim["email"].(string),
 		Roles: claim["roles"].(string),

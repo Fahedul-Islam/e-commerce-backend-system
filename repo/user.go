@@ -1,30 +1,27 @@
-package repository
+package repo
 
 import (
 	"database/sql"
-	"time"
+	"errors"
 
 	"github.com/Fahedul-Islam/e-commerce/domain"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
 type AuthHandler struct {
-	DB            *sql.DB
-	JwtSecret     []byte
-	TokenExpiry   time.Duration
-	RefreshExpiry time.Duration
+	DB *sql.DB
 }
 
-func NewAuthHandler(db *sql.DB, jwtSecret []byte) *AuthHandler {
-	return &AuthHandler{DB: db, JwtSecret: jwtSecret, TokenExpiry: 24 * time.Hour, RefreshExpiry: 7 * 24 * time.Hour}
+func NewAuthHandler(db *sql.DB) *AuthHandler {
+	return &AuthHandler{DB: db}
 }
 
-func (r *AuthHandler) Create(user *domain.User) error {
+func (r *AuthHandler) CreateUser(user *domain.User) error {
 	query := `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $2, $3, $4) RETURNING id`
 	return r.DB.QueryRow(query, user.Username, user.Email, user.PasswordHash, user.Roles).Scan(&user.ID)
 }
 
-func (r *AuthHandler) GetAll() ([]domain.User, error) {
+func (r *AuthHandler) GetAllUsers() ([]domain.User, error) {
 	rows, err := r.DB.Query(`SELECT * FROM users`)
 	if err != nil {
 		return nil, err
@@ -42,15 +39,25 @@ func (r *AuthHandler) GetAll() ([]domain.User, error) {
 	return users, nil
 }
 
-func (r *AuthHandler) Authenticate(email, password string) (*domain.User, error) {
+func (r *AuthHandler) AuthenticateUser(login *domain.UserLogin) (*domain.User, error) {
 	var user domain.User
 	query := `SELECT * FROM users WHERE email = $1`
-	if err := r.DB.QueryRow(query, email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Roles); err != nil {
+	if err := r.DB.QueryRow(query, login.Email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Roles); err != nil {
 		return nil, err
 	}
 
-	if err := util.CheckPasswordHash(password, user.PasswordHash); err != nil {
+	if err := util.CheckPasswordHash(login.Password, user.PasswordHash); err != nil {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *AuthHandler) UserValidate(user *domain.UserLogin) error {
+	if user.Email == "" {
+		return errors.New("email is required")
+	}
+	if user.Password == "" {
+		return errors.New("password is required")
+	}
+	return nil
 }

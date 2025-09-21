@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Fahedul-Islam/e-commerce/database/connections"
-	"github.com/Fahedul-Islam/e-commerce/database/repository"
+	"github.com/Fahedul-Islam/e-commerce/domain"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
@@ -35,7 +35,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert into DB
-	user := repository.User{
+	user := domain.User{
 		Username:     tempUser["username"],
 		Email:        tempUser["email"],
 		PasswordHash: tempUser["password"],
@@ -43,7 +43,7 @@ func (h *UserHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
-	if err := h.Repo.Create(&user); err != nil {
+	if err := h.srvc.CreateUser(&user); err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
