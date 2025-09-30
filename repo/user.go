@@ -5,23 +5,28 @@ import (
 	"errors"
 
 	"github.com/Fahedul-Islam/e-commerce/domain"
+	"github.com/Fahedul-Islam/e-commerce/user"
 	"github.com/Fahedul-Islam/e-commerce/util"
 )
 
-type AuthHandler struct {
+type UserRepo interface {
+	user.UserRepo
+}
+
+type userRepo struct {
 	DB *sql.DB
 }
 
-func NewAuthHandler(db *sql.DB) *AuthHandler {
-	return &AuthHandler{DB: db}
+func NewUserRepo(db *sql.DB) UserRepo {
+	return &userRepo{DB: db}
 }
 
-func (r *AuthHandler) CreateUser(user *domain.User) error {
+func (r *userRepo) CreateUser(user *domain.User) error {
 	query := `INSERT INTO users (username, email, password_hash, roles) VALUES ($1, $2, $3, $4) RETURNING id`
 	return r.DB.QueryRow(query, user.Username, user.Email, user.PasswordHash, user.Roles).Scan(&user.ID)
 }
 
-func (r *AuthHandler) GetAllUsers() ([]domain.User, error) {
+func (r *userRepo) GetAllUsers() ([]domain.User, error) {
 	rows, err := r.DB.Query(`SELECT * FROM users`)
 	if err != nil {
 		return nil, err
@@ -39,7 +44,7 @@ func (r *AuthHandler) GetAllUsers() ([]domain.User, error) {
 	return users, nil
 }
 
-func (r *AuthHandler) AuthenticateUser(login *domain.UserLogin) (*domain.User, error) {
+func (r *userRepo) AuthenticateUser(login *domain.UserLogin) (*domain.User, error) {
 	var user domain.User
 	query := `SELECT * FROM users WHERE email = $1`
 	if err := r.DB.QueryRow(query, login.Email).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt, &user.Roles); err != nil {
@@ -52,7 +57,7 @@ func (r *AuthHandler) AuthenticateUser(login *domain.UserLogin) (*domain.User, e
 	return &user, nil
 }
 
-func (r *AuthHandler) UserValidate(user *domain.UserLogin) error {
+func (r *userRepo) UserValidate(user *domain.UserLogin) error {
 	if user.Email == "" {
 		return errors.New("email is required")
 	}

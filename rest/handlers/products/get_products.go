@@ -7,7 +7,7 @@ import (
 )
 
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	products, err := h.Repo.GetAll()
+	products, err := h.service.GetAll()
 	if err != nil {
 		http.Error(w, "Failed to retrieve products", http.StatusInternalServerError)
 		return

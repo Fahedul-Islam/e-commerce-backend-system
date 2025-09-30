@@ -12,6 +12,7 @@ import (
 	userservices "github.com/Fahedul-Islam/e-commerce/rest/handlers/user-services"
 	usrHandler "github.com/Fahedul-Islam/e-commerce/rest/handlers/users"
 	userDomain "github.com/Fahedul-Islam/e-commerce/user"
+	productDomain "github.com/Fahedul-Islam/e-commerce/product"
 )
 
 func Serve(mux *http.ServeMux) {
@@ -24,13 +25,16 @@ func Serve(mux *http.ServeMux) {
 	connections.Migrate(cfg.GetDBURL())
 	connections.InitRedis()
 
-	userRepo := repo.NewAuthHandler(db)
+	userRepo := repo.NewUserRepo(db)
 	userSrvc := userDomain.NewService(userRepo)
 	userHandler := usrHandler.NewUserHandler(cfg, userSrvc)
 
-	productHandler := products.NewProductHandler(repository.NewProductRepository(db))
+	productRepo := repo.NewProductRepo(db)
+	productSrvc := productDomain.NewService(productRepo)
+	productHandler := products.NewProductHandler(cfg,productSrvc)
+
 	orderHandler := userservices.NewOrderHandler(repository.NewOrderRepository(db))
-	
+
 	server := rest.NewServer(productHandler, userHandler, orderHandler)
 	server.Start(cfg)
 

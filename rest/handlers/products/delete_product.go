@@ -13,7 +13,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Repo.Delete(productID); err != nil {
+	if err := h.service.Delete(productID); err != nil {
 		http.Error(w, "Failed to delete product", http.StatusInternalServerError)
 		return
 	}
